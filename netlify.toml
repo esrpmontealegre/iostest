@@ -1,0 +1,8 @@
+[build]
+  command = "npm run build"
+  publish = "dist/ios-test"   # set to your actual output path
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
