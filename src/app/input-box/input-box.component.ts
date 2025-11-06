@@ -114,6 +114,23 @@ export class InputBoxComponent implements OnInit, OnDestroy {
         containerElement.style.bottom = this.isKeyboardVisible ? `${bottomOffset}px` : '0';
       }
 
+  // Find nearest chat-shell ancestor and set CSS variable so the chat container moves up too
+  {
+        const chatShell = document.querySelector('.chat-shell') as HTMLElement | null;
+        if (chatShell) {
+          chatShell.style.setProperty('--keyboard-offset', `${bottomOffset}px`);
+        }
+
+        // If keyboard visible, scroll chat-container to bottom to show latest messages
+        const chatContainer = document.querySelector('.chat-container') as HTMLElement | null;
+        if (chatContainer && this.isKeyboardVisible) {
+          // small timeout to allow layout to settle
+          setTimeout(() => {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+          }, 50);
+        }
+      }
+
       // Update debug information
       this.debugInfo = `Is Keyboard Visible: ${this.isKeyboardVisible}\n` +
                        `Max Seen Height: ${Math.round(this.maxSeenViewportHeight)}px\n` +
