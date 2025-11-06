@@ -2,5 +2,22 @@
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  height: 100vh; /* Full viewport height */
+  width: 100%;
+  padding: 10px;
+  background-color: #fff; // Add background to ensure visibility
+  z-index: 1000; // Ensure it stays above other content
+
+  .input-box {
+    width: 100%;
+    max-width: 600px;
+    
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: none;
+      font-size: 16px; // This prevents iOS zoom on focus
+    }
+  }
 }
