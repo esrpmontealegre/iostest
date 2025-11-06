@@ -1,12 +1,28 @@
 :root {
-  /* Tunables */
   --header-h: 56px;
   --composer-h: 56px;
 
-  /* Dynamic (set by KeyboardService) */
+  /* dynamic */
   --kb-offset: 0px;
-  --bottom-gap: calc(var(--composer-h) + env(safe-area-inset-bottom));
+  /* no env(safe-area-inset-bottom) here anymore */
+  --bottom-gap: calc(var(--composer-h) + var(--kb-offset));
 }
+
+/* scroller: pad by bottom-gap only */
+.chat-scroller {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 12px 12px calc(var(--bottom-gap) + 12px);
+}
+
+/* composer still respects the safe-area */
+.composer {
+  height: var(--composer-h);
+  padding: 8px 12px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  /* ...rest unchanged... */
+}
+
 
 * { box-sizing: border-box; }
 

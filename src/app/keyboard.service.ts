@@ -12,29 +12,30 @@ export class KeyboardService {
   init() {
     const vv = (window as any).visualViewport as VisualViewport | undefined;
 
-    const updateOffsets = () => {
-      // Base values
-      let kbOffset = 0;
+    // ...
+const updateOffsets = () => {
+  let kbOffset = 0;
+  const vv = (window as any).visualViewport as VisualViewport | undefined;
 
-      if (vv) {
-        // Amount of viewport "covered" by the VK
-        // Ref: visualViewport height is the *visible* area above the keyboard.
-        const covered = window.innerHeight - vv.height - vv.offsetTop;
-        kbOffset = Math.max(0, Math.round(covered));
-      } else {
-        // Fallback (older browsers): try to detect with resize
-        const covered = window.innerHeight - document.documentElement.clientHeight;
-        kbOffset = Math.max(0, Math.round(covered));
-      }
+  if (vv) {
+    const covered = window.innerHeight - vv.height - vv.offsetTop;
+    kbOffset = Math.max(0, Math.round(covered));
+  } else {
+    const covered = window.innerHeight - document.documentElement.clientHeight;
+    kbOffset = Math.max(0, Math.round(covered));
+  }
 
-      // Set CSS variables globally
-      this.docEl.style.setProperty('--kb-offset', `${kbOffset}px`);
-      // bottom gap = composer height + keyboard offset + safe area
-      this.docEl.style.setProperty(
-        '--bottom-gap',
-        `calc(var(--composer-h) + ${kbOffset}px + env(safe-area-inset-bottom))`
-      );
-    };
+  // Set the pure keyboard offset
+  this.docEl.style.setProperty('--kb-offset', `${kbOffset}px`);
+
+  // IMPORTANT: do NOT add safe-area here; composer already has it.
+  this.docEl.style.setProperty(
+    '--bottom-gap',
+    `calc(var(--composer-h) + var(--kb-offset))`
+  );
+};
+// ...
+
 
     // Initial set
     updateOffsets();
