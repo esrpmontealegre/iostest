@@ -8,7 +8,10 @@ import { Component, OnInit, OnDestroy, ElementRef, NgZone, ChangeDetectorRef } f
 export class InputBoxComponent implements OnInit, OnDestroy {
   private visualViewport: any;
   private resizeHandler: () => void;
-  private initialWindowHeight: number;
+  private focusInHandler: (e: Event) => void;
+  private focusOutHandler: (e: Event) => void;
+  private pollingId: any = null;
+  private maxSeenViewportHeight: number = window.innerHeight;
   debugInfo: string = 'Waiting for keyboard...';
   isKeyboardVisible: boolean = false;
 
@@ -17,71 +20,49 @@ export class InputBoxComponent implements OnInit, OnDestroy {
     private ngZone: NgZone,
     private cdr: ChangeDetectorRef
   ) {
-    this.initialWindowHeight = window.innerHeight;
-    
     // Initialize the resize handler
     this.resizeHandler = () => {
-      this.ngZone.run(() => {
-        if (this.visualViewport) {
-          const currentHeight = this.visualViewport.height;
-          const containerElement = this.elementRef.nativeElement.querySelector('.input-box-container');
-          const bottomOffset = this.initialWindowHeight - this.visualViewport.height;
-          
-          // Consider keyboard visible if height reduction is significant (> 100px)
-          this.isKeyboardVisible = bottomOffset > 100;
-          
-          if (containerElement) {
-            containerElement.style.position = 'fixed';
-            containerElement.style.left = '0';
-            containerElement.style.right = '0';
-            
-            if (this.isKeyboardVisible) {
-              containerElement.style.bottom = `${bottomOffset}px`;
-            } else {
-              containerElement.style.bottom = '0';
-            }
-            
-            // Update debug information
-            this.debugInfo = `Is Keyboard Visible: ${this.isKeyboardVisible}\n` +
-                           `Initial Window Height: ${this.initialWindowHeight}px\n` +
-                           `Current Viewport Height: ${currentHeight}px\n` +
-                           `Window Height: ${window.innerHeight}px\n` +
-                           `Bottom Offset: ${bottomOffset}px\n` +
-                           `Scale: ${this.visualViewport.scale}\n` +
-                           `Page Top: ${this.visualViewport.pageTop}px`;
-                           
-            // Ensure change detection runs
-            this.cdr.detectChanges();
-          }
-        }
-      });
+      // Use ngZone.run because we update component state (debugInfo)
+      this.ngZone.run(() => this.checkViewport());
+    };
+
+    // Focusin / focusout handlers for document-level events
+    this.focusInHandler = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        // start polling to detect keyboard (some browsers don't fire resize reliably)
+        this.startPolling();
+      }
+    };
+
+    this.focusOutHandler = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        // stop polling and recalc
+        this.stopPolling();
+        this.checkViewport();
+      }
     };
   }
 
   ngOnInit(): void {
     this.ngZone.runOutsideAngular(() => {
-      // Check if VisualViewport API is available (modern mobile browsers)
+      // VisualViewport API if available
       if (window.visualViewport) {
         this.visualViewport = window.visualViewport;
         this.visualViewport.addEventListener('resize', this.resizeHandler);
-        
-        // Also listen for scroll events as some mobile browsers trigger this
         this.visualViewport.addEventListener('scroll', this.resizeHandler);
-        
-        // Force initial calculation
-        this.resizeHandler();
-      } else {
-        // Fallback for browsers without VisualViewport API
-        window.addEventListener('resize', this.resizeHandler);
       }
 
-      // Add focus event listener to force recalculation
-      const textarea = this.elementRef.nativeElement.querySelector('textarea');
-      if (textarea) {
-        textarea.addEventListener('focus', () => {
-          setTimeout(this.resizeHandler, 100); // Small delay to ensure keyboard is shown
-        });
-      }
+      // Always listen to window resize as a fallback
+      window.addEventListener('resize', this.resizeHandler);
+
+      // Document-level focusin/focusout to detect when inputs gain focus
+      document.addEventListener('focusin', this.focusInHandler);
+      document.addEventListener('focusout', this.focusOutHandler);
+
+      // Initial check
+      setTimeout(() => this.ngZone.run(() => this.checkViewport()), 50);
     });
   }
 
@@ -90,8 +71,59 @@ export class InputBoxComponent implements OnInit, OnDestroy {
     if (this.visualViewport) {
       this.visualViewport.removeEventListener('resize', this.resizeHandler);
       this.visualViewport.removeEventListener('scroll', this.resizeHandler);
-    } else {
-      window.removeEventListener('resize', this.resizeHandler);
+    }
+    window.removeEventListener('resize', this.resizeHandler);
+    document.removeEventListener('focusin', this.focusInHandler);
+    document.removeEventListener('focusout', this.focusOutHandler);
+    this.stopPolling();
+  }
+
+  // Start a short polling loop while an input is focused (helps on browsers that don't emit resize)
+  private startPolling() {
+    if (this.pollingId) { return; }
+    this.pollingId = setInterval(() => this.ngZone.run(() => this.checkViewport()), 100);
+    // Also run an immediate check
+    this.checkViewport();
+  }
+
+  private stopPolling() {
+    if (this.pollingId) {
+      clearInterval(this.pollingId);
+      this.pollingId = null;
+    }
+  }
+
+  // Core viewport check used by handlers and polling
+  private checkViewport() {
+    try {
+      const viewportHeight = this.visualViewport ? this.visualViewport.height : window.innerHeight;
+      // Track the largest viewport height seen as the 'no keyboard' baseline
+      if (viewportHeight > this.maxSeenViewportHeight) {
+        this.maxSeenViewportHeight = viewportHeight;
+      }
+
+      const bottomOffset = Math.max(0, this.maxSeenViewportHeight - viewportHeight);
+      const containerElement = this.elementRef.nativeElement.querySelector('.input-box-container');
+
+      this.isKeyboardVisible = bottomOffset > 100; // threshold
+
+      if (containerElement) {
+        containerElement.style.position = 'fixed';
+        containerElement.style.left = '0';
+        containerElement.style.right = '0';
+        containerElement.style.bottom = this.isKeyboardVisible ? `${bottomOffset}px` : '0';
+      }
+
+      // Update debug information
+      this.debugInfo = `Is Keyboard Visible: ${this.isKeyboardVisible}\n` +
+                       `Max Seen Height: ${Math.round(this.maxSeenViewportHeight)}px\n` +
+                       `Current Viewport Height: ${Math.round(viewportHeight)}px\n` +
+                       `Window.innerHeight: ${Math.round(window.innerHeight)}px\n` +
+                       `Bottom Offset: ${Math.round(bottomOffset)}px`;
+      this.cdr.detectChanges();
+      console.debug('[InputBox] checkViewport', { viewportHeight, maxSeen: this.maxSeenViewportHeight, bottomOffset, isKeyboardVisible: this.isKeyboardVisible });
+    } catch (err) {
+      console.error('checkViewport error', err);
     }
   }
 }
