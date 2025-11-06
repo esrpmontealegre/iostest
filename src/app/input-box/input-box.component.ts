@@ -119,7 +119,7 @@ export class InputBoxComponent implements OnInit, OnDestroy {
                        `Max Seen Height: ${Math.round(this.maxSeenViewportHeight)}px\n` +
                        `Current Viewport Height: ${Math.round(viewportHeight)}px\n` +
                        `Window.innerHeight: ${Math.round(window.innerHeight)}px\n` +
-                       `Bottom Offset: ${Math.round(bottomOffset)}px`;
+                       `Bottom Offset1: ${Math.round(bottomOffset)}px`;
       this.cdr.detectChanges();
       console.debug('[InputBox] checkViewport', { viewportHeight, maxSeen: this.maxSeenViewportHeight, bottomOffset, isKeyboardVisible: this.isKeyboardVisible });
     } catch (err) {
