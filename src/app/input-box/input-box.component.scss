@@ -1,3 +1,20 @@
+.debug-info {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 10px;
+  font-family: monospace;
+  z-index: 2000;
+  width: 100%;
+
+  pre {
+    margin: 0;
+    white-space: pre-wrap;
+  }
+}
+
 .input-box-container {
   display: flex;
   justify-content: center;
