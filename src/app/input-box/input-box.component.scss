@@ -8,6 +8,7 @@
   font-family: monospace;
   z-index: 2000;
   width: 100%;
+  pointer-events: none; // Allow interaction with elements below
 
   pre {
     margin: 0;
@@ -16,13 +17,18 @@
 }
 
 .input-box-container {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   justify-content: center;
   align-items: flex-end;
   width: 100%;
   padding: 10px;
-  background-color: #fff; // Add background to ensure visibility
-  z-index: 1000; // Ensure it stays above other content
+  background-color: #fff;
+  z-index: 1000;
+  transition: bottom 0.3s ease; // Smooth transition when keyboard appears/disappears
 
   .input-box {
     width: 100%;
@@ -34,7 +40,10 @@
       border: 1px solid #ccc;
       border-radius: 4px;
       resize: none;
-      font-size: 16px; // This prevents iOS zoom on focus
+      font-size: 16px;
+      line-height: 1.4;
+      min-height: 44px; // Ensure good tap target size
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
   }
 }
