@@ -1,7 +1,7 @@
 name: Deploy Angular to GH Pages
 on:
   push:
-    branches: [ main ]   # change if your default branch is different
+    branches: [ master ]   # change if your default branch is different
 
 permissions:
   contents: write
