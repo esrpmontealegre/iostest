@@ -1,20 +1,12 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { FormsModule } from '@angular/forms';
 
-import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { InputBoxComponent } from './input-box/input-box.component';
 
 @NgModule({
-  declarations: [
-    AppComponent,
-    InputBoxComponent
-  ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule
-  ],
-  providers: [],
+  declarations: [AppComponent],
+  imports: [BrowserModule, FormsModule],
   bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class AppModule {}
